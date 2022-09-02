@@ -42,6 +42,39 @@ async def from_iso_with_offset_to_unix(_time: str) -> float:
     iso = datetime.fromisoformat(_time).timestamp()
     return int(iso - 10800)
 
+def num_to_mod(mod_sum_integer:int)->list[str]:
+    mod_list:list[str] = []
+    mod_sum_integer = int(mod_sum_integer)
+
+    mods = [
+        'NF','EZ','TD','HD','HR','SD','DT','RX','HT','NC','FL','Auto',
+        'SO','AP','PF','4K','5K','6K','7K','8K','FI','RDM','CI','TG',
+        '9K','10K','1K','3K','2K','V2','MI'
+    ]
+    
+    current_number = int(mod_sum_integer)
+
+    for mod_index in range(len(mods)-1, -1, -1): # Stole from owo-bot lmao https://github.com/AznStevy/owo-bot/blob/f7651f3cb7d67ba4d93e8ffa96d7a1d3120b2bd8/cogs/osu/osu_utils/utils.py#L270
+        mod = mods[mod_index]
+
+        if mod == "NC":
+            if current_number >= 576:
+                current_number -= 576
+                mod_list.append(mod)
+                continue
+        
+        elif mod == "PF":
+            if current_number >= 16416:
+                current_number -= 16416
+                mod_list.append(mod)
+
+        if current_number >= 2**mod_index:
+            current_number -= 2**mod_index
+            mod_list.append(mod)
+        
+
+    return mod_list
+
 async def create_embed_scores_json(response_json: dict, embed: discord.Embed):
     i = 0
     for score in response_json["scores"]:
@@ -50,9 +83,15 @@ async def create_embed_scores_json(response_json: dict, embed: discord.Embed):
             i = 1
         
         diff = f"{int(score['beatmap']['diff']*100)/100}🌟"
-        
+        mods = ""
+
+        for mod in num_to_mod(score['mods']):
+            mods += mod
+        if mods != "":
+            mods = f" +{mods}"
+
         embed.add_field(
-            name=f"{score['beatmap']['artist']} - {score['beatmap']['title']} [{score['beatmap']['version']}]",
+            name=f"{score['beatmap']['artist']} - {score['beatmap']['title']} [{score['beatmap']['version']}]{mods}",
             value=f"{grades.get(score['grade'])} - **{score['pp']}pp** - {score['score']} - {score['max_combo']}x/{score['beatmap']['max_combo']}x\n**{diff}** - {int(score['acc']*100)/100}% - {score['n300']}/{score['n100']}/{score['n50']}/{score['nmiss']} - <t:{await from_iso_with_offset_to_unix(score['play_time'])}:R>",
             inline=False
         )
