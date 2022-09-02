@@ -10,8 +10,9 @@ import json
 API_URL = "https://api.fubi.ca"
 dotenv.load_dotenv()
 secret = os.getenv("DISCORD_SECRET")
+server_id = os.getenv("SERVER_ID")
 session = None
-client = discord.Bot(debug_guilds=[689273760330678303])
+client = discord.Bot(debug_guilds=[server_id])
 
 if not os.path.exists("db.json"):
         with open("db.json", "w") as f:
